@@ -49,4 +49,15 @@
             <li>@planet</li>
         }
     </ul>
+    <h4>Characters (Grouped by Homeworld)</h4>
+    @foreach (var group in Model.SelectedFilm.CharactersByHomeworld)
+    {
+        <h5>@group.Key</h5>
+        <ul>
+            @foreach (var character in group.Value)
+            {
+                <li>@character</li>
+            }
+        </ul>
+    }
 }

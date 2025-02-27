@@ -7,15 +7,21 @@ using System.Collections.Generic;
 
 public class IndexModel : PageModel
 {
+
+
     private readonly HttpClient _httpClient;
     public List<Film> Films { get; set; }
     public Film SelectedFilm { get; set; }
     public string SortOrder { get; set; }
 
+
+
     public IndexModel(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
+
+
 
     public async Task OnGetAsync(string sortOrder, int? episodeId)
     {
@@ -36,9 +42,12 @@ public class IndexModel : PageModel
             if (SelectedFilm != null)
             {
                 SelectedFilm.Planets = await FetchNamesAsync(SelectedFilm.Planets);
+                SelectedFilm.CharactersByHomeworld = await FetchCharactersByHomeworldAsync(SelectedFilm.Characters);
             }
         }
     }
+
+
 
     private async Task<List<string>> FetchNamesAsync(List<string> urls)
     {
@@ -51,7 +60,34 @@ public class IndexModel : PageModel
         }
         return names;
     }
+
+
+
+    private async Task<Dictionary<string, List<string>>> FetchCharactersByHomeworldAsync(List<string> characterUrls)
+    {
+        var result = new Dictionary<string, List<string>>();
+
+        foreach (var url in characterUrls)
+        {
+            var response = await _httpClient.GetStringAsync(url);
+            var character = JsonConvert.DeserializeObject<dynamic>(response);
+
+            var homeworldResponse = await _httpClient.GetStringAsync((string)character.homeworld);
+            var homeworld = (string)JsonConvert.DeserializeObject<dynamic>(homeworldResponse).name; 
+
+            if (!result.ContainsKey(homeworld))
+            {
+                result[homeworld] = new List<string>();
+            }
+            result[homeworld].Add((string)character.name);
+        }
+
+        return result;
+    }
+
 }
+
+
 
 public class Film
 {
@@ -67,8 +103,15 @@ public class Film
     [JsonProperty("opening_crawl")]
     public string OpeningCrawl { get; set; }
 
+
+
+
     public List<string> Planets { get; set; } = new List<string>();
+    public List<string> Characters { get; set; } = new List<string>();
+    public Dictionary<string, List<string>> CharactersByHomeworld { get; set; } = new Dictionary<string, List<string>>();
 }
+
+
 
 public class FilmResponse
 {
